@@ -13,6 +13,8 @@ import os
 import random
 import sys
 
+from sys import intern
+
 from collections import defaultdict, namedtuple
 
 
@@ -213,7 +215,7 @@ def read_data(input_file, method, omit_bias=False, omit_lexemes=False, max_lines
     if input_file.endswith('gz'):
         f = gzip.open(input_file, 'rb')
     else:
-        f = open(input_file, 'rb')
+        f = open(input_file, 'r')
     reader = csv.DictReader(f)
     for i, row in enumerate(reader):
         if max_lines is not None and i >= max_lines:
@@ -269,6 +271,11 @@ argparser.add_argument('input_file', action="store", help='log file for training
 
 if __name__ == "__main__":
 
+    """
+    exemple of usage:
+    python3 experiment.py settles.acl16.learning_traces.13m.csv 
+    """
+
     args = argparser.parse_args()
 
     # model diagnostics
@@ -292,7 +299,7 @@ if __name__ == "__main__":
 
     # write out model weights and predictions
     filebits = [args.method] + \
-        [k for k, v in sorted(vars(args).iteritems()) if v is True] + \
+        [k for k, v in sorted(vars(args).items()) if v is True] + \
         [os.path.splitext(os.path.basename(args.input_file).replace('.gz', ''))[0]]
     if args.max_lines is not None:
         filebits.append(str(args.max_lines))
