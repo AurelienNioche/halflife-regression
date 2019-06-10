@@ -146,32 +146,37 @@ class SpacedRepetitionModel(object):
         total_l2 = sum([x**2 for x in self.weights.values()])
         total_loss = total_slp + self.hlwt*total_slh + self.l2wt*total_l2
         if prefix:
-            sys.stderr.write('%s\t' % prefix)
-        sys.stderr.write('%.1f (p=%.1f, h=%.1f, l2=%.1f)\tmae(p)=%.3f\tcor(p)=%.3f\tmae(h)=%.3f\tcor(h)=%.3f\n' % \
-            (total_loss, total_slp, self.hlwt*total_slh, self.l2wt*total_l2, \
-            mae_p, cor_p, mae_h, cor_h))
+            sys.stderr.write(f'{prefix}\t')
+        sys.stderr.write(
+            f'{total_loss:.1f} '
+            f'(p={total_slp:.1f}, h={self.hlwt*total_slh:.1f}, l2={self.l2wt*total_l2:.1f})\t'
+            f'mae(p)={mae_p:.3f}\tcor(p)={cor_p:.3f}\t'
+            f'mae(h)={mae_h:.3f}\tcor(h)={cor_h:.3f}\n')
 
     def dump_weights(self, fname):
         with open(fname, 'wb') as f:
-            for (k, v) in self.weights.iteritems():
-                f.write('%s\t%.4f\n' % (k, v))
+            for (k, v) in self.weights.items():
+                f.write(f'{k}\t{v:.4f}\n'.encode())
 
     def dump_predictions(self, fname, testset):
         with open(fname, 'wb') as f:
-            f.write('p\tpp\th\thh\tlang\tuser_id\ttimestamp\n')
+            f.write('p\tpp\th\thh\tlang\tuser_id\ttimestamp\n'.encode())
             for inst in testset:
                 pp, hh = self.predict(inst)
-                f.write('%.4f\t%.4f\t%.4f\t%.4f\t%s\t%s\t%d\n' % (inst.p, pp, inst.h, hh, inst.lang, inst.uid, inst.ts))
+                f.write(f'{inst.p:.4f}\t{pp:.4f}\t{inst.h:.4f}\t{hh:.4f}\t{inst.lang}\t{inst.uid}\t{inst.ts}\n'
+                        .encode())
 
     def dump_detailed_predictions(self, fname, testset):
         with open(fname, 'wb') as f:
-            f.write('p\tpp\th\thh\tlang\tuser_id\ttimestamp\tlexeme_tag\n')
+            f.write('p\tpp\th\thh\tlang\tuser_id\ttimestamp\tlexeme_tag\n'.encode())
             for inst in testset:
                 pp, hh = self.predict(inst)
                 for i in range(inst.right):
-                    f.write('1.0\t%.4f\t%.4f\t%.4f\t%s\t%s\t%d\t%s\n' % (pp, inst.h, hh, inst.lang, inst.uid, inst.ts, inst.lexeme))
+                    to_write = '1.0'
                 for i in range(inst.wrong):
-                    f.write('0.0\t%.4f\t%.4f\t%.4f\t%s\t%s\t%d\t%s\n' % (pp, inst.h, hh, inst.lang, inst.uid, inst.ts, inst.lexeme))
+                    to_write = '0.0'
+                to_write += f'\t{pp:.4f}\t{inst.h:.4f}\t{hh:.4f}\t{inst.lang}\t{inst.uid}\t{inst.ts}\t{inst.lexeme}\n'
+                f.write(to_write.encode())
 
 
 def pclip(p):
@@ -224,7 +229,7 @@ def read_data(input_file, method, omit_bias=False, omit_lexemes=False, max_lines
         t = float(row['delta'])/(60*60*24)  # convert time delta to days
         h = hclip(-t/(math.log(p, 2)))
         lang = '%s->%s' % (row['ui_language'], row['learning_language'])
-        lexeme_id = row['lexeme_id']
+        # lexeme_id = row['lexeme_id']
         lexeme_string = row['lexeme_string']
         timestamp = int(row['timestamp'])
         user_id = row['user_id']
@@ -269,12 +274,11 @@ argparser.add_argument('-x', action="store", dest="max_lines", type=int, default
 argparser.add_argument('input_file', action="store", help='log file for training')
 
 
-if __name__ == "__main__":
-
+def main():
     """
-    exemple of usage:
-    python3 experiment.py settles.acl16.learning_traces.13m.csv 
-    """
+        exemple of usage:
+        python3 experiment.py settles.acl16.learning_traces.13m.csv
+        """
 
     args = argparser.parse_args()
 
@@ -299,13 +303,18 @@ if __name__ == "__main__":
 
     # write out model weights and predictions
     filebits = [args.method] + \
-        [k for k, v in sorted(vars(args).items()) if v is True] + \
-        [os.path.splitext(os.path.basename(args.input_file).replace('.gz', ''))[0]]
+               [k for k, v in sorted(vars(args).items()) if v is True] + \
+               [os.path.splitext(os.path.basename(args.input_file).replace('.gz', ''))[0]]
     if args.max_lines is not None:
         filebits.append(str(args.max_lines))
     filebase = '.'.join(filebits)
     if not os.path.exists('results/'):
         os.makedirs('results/')
-    model.dump_weights('results/'+filebase+'.weights')
-    model.dump_predictions('results/'+filebase+'.preds', testset)
+    model.dump_weights('results/' + filebase + '.weights')
+    model.dump_predictions('results/' + filebase + '.preds', testset)
     # model.dump_detailed_predictions('results/'+filebase+'.detailed', testset)
+
+
+if __name__ == "__main__":
+
+    main()

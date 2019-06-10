@@ -128,3 +128,5 @@ dmypy.json
 .idea/
 
 settles.acl16.learning_traces.13m.csv
+
+results/
