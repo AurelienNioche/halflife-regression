@@ -36,7 +36,8 @@ class SpacedRepetitionModel(object):
       - 'leitner' (fixed)
       - 'pimsleur' (fixed)
     """
-    def __init__(self, method='hlr', omit_h_term=False, initial_weights=None, lrate=.001, hlwt=.01, l2wt=.1, sigma=1.):
+    def __init__(self, method='hlr', omit_h_term=False, initial_weights=None,
+                 lrate=.001, hlwt=.01, l2wt=.1, sigma=1.):
         self.method = method
         self.omit_h_term = omit_h_term
         self.weights = defaultdict(float)
